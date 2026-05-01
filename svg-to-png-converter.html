@@ -1,0 +1,2281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Converter Pro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0f1a;
+            --bg-secondary: #111827;
+            --bg-tertiary: #1a2234;
+            --bg-card: rgba(17, 24, 39, 0.8);
+            --fg-primary: #f0f4f8;
+            --fg-secondary: #94a3b8;
+            --fg-muted: #64748b;
+            --accent-primary: #06b6d4;
+            --accent-secondary: #0891b2;
+            --accent-glow: rgba(6, 182, 212, 0.4);
+            --border-color: rgba(148, 163, 184, 0.1);
+            --error: #ef4444;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 20px;
+            --radius-xl: 28px;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.4);
+            --shadow-glow: 0 0 60px rgba(6, 182, 212, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--bg-primary);
+            color: var(--fg-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse 80% 50% at 20% -20%, rgba(6, 182, 212, 0.15), transparent),
+                radial-gradient(ellipse 60% 40% at 80% 100%, rgba(139, 92, 246, 0.1), transparent),
+                radial-gradient(ellipse 40% 30% at 50% 50%, rgba(6, 182, 212, 0.05), transparent);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .noise-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .container {
+            position: relative;
+            z-index: 2;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 48px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .logo-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-glow);
+        }
+
+        .logo-icon svg {
+            width: 32px;
+            height: 32px;
+            stroke: var(--bg-primary);
+            stroke-width: 2;
+        }
+
+        h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, var(--fg-primary) 0%, var(--fg-secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--fg-secondary);
+            font-size: 1.1rem;
+            margin-top: 8px;
+            font-weight: 400;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 32px;
+            justify-content: center;
+            animation: fadeInUp 0.6s ease-out 0.1s backwards;
+        }
+
+        .tab-btn {
+            padding: 12px 28px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            color: var(--fg-secondary);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn:hover {
+            background: rgba(6, 182, 212, 0.1);
+            border-color: var(--accent-primary);
+            color: var(--fg-primary);
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: var(--bg-primary);
+            border-color: transparent;
+            box-shadow: 0 4px 20px var(--accent-glow);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeInUp 0.4s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-xl);
+            padding: 32px;
+            backdrop-filter: blur(20px);
+            box-shadow: var(--shadow-md);
+            margin-bottom: 24px;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: linear-gradient(180deg, var(--accent-primary), transparent);
+            border-radius: 2px;
+        }
+
+        .upload-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 48px 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            background: rgba(6, 182, 212, 0.02);
+        }
+
+        .upload-zone::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, transparent, rgba(6, 182, 212, 0.05));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .upload-zone:hover,
+        .upload-zone.dragover {
+            border-color: var(--accent-primary);
+            background: rgba(6, 182, 212, 0.05);
+        }
+
+        .upload-zone:hover::before,
+        .upload-zone.dragover::before {
+            opacity: 1;
+        }
+
+        .upload-zone.dragover {
+            transform: scale(1.02);
+            box-shadow: 0 0 40px var(--accent-glow);
+        }
+
+        .upload-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s ease;
+        }
+
+        .upload-zone:hover .upload-icon {
+            transform: translateY(-4px);
+        }
+
+        .upload-icon svg {
+            width: 28px;
+            height: 28px;
+            stroke: var(--bg-primary);
+            stroke-width: 2.5;
+        }
+
+        .upload-text {
+            font-size: 1.1rem;
+            color: var(--fg-primary);
+            margin-bottom: 8px;
+        }
+
+        .upload-hint {
+            font-size: 0.875rem;
+            color: var(--fg-muted);
+        }
+
+        .upload-hint span {
+            color: var(--accent-primary);
+            font-weight: 500;
+        }
+
+        #fileInput, #batchFileInput {
+            display: none;
+        }
+
+        .file-list {
+            margin-top: 24px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .file-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .file-list::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+            border-radius: 3px;
+        }
+
+        .file-list::-webkit-scrollbar-thumb {
+            background: var(--accent-primary);
+            border-radius: 3px;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .file-item:hover {
+            border-color: var(--accent-primary);
+            background: rgba(6, 182, 212, 0.05);
+        }
+
+        .file-item.converting {
+            border-color: var(--warning);
+            background: rgba(245, 158, 11, 0.05);
+        }
+
+        .file-item.success {
+            border-color: var(--success);
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        .file-item.error {
+            border-color: var(--error);
+            background: rgba(239, 68, 68, 0.05);
+        }
+
+        .file-thumb {
+            width: 56px;
+            height: 56px;
+            border-radius: var(--radius-sm);
+            background: var(--bg-tertiary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .file-thumb img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .file-thumb svg {
+            width: 24px;
+            height: 24px;
+            stroke: var(--fg-muted);
+            stroke-width: 1.5;
+        }
+
+        .file-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .file-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--fg-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 4px;
+        }
+
+        .file-meta {
+            display: flex;
+            gap: 12px;
+            font-size: 0.8rem;
+            color: var(--fg-muted);
+        }
+
+        .file-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .file-status.pending {
+            background: rgba(100, 116, 139, 0.2);
+            color: var(--fg-muted);
+        }
+
+        .file-status.converting {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+        }
+
+        .file-status.success {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .file-status.error {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--error);
+        }
+
+        .file-status svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .file-action-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-sm);
+            border: none;
+            background: var(--bg-tertiary);
+            color: var(--fg-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .file-action-btn:hover {
+            background: var(--accent-primary);
+            color: var(--bg-primary);
+        }
+
+        .file-action-btn.delete:hover {
+            background: var(--error);
+        }
+
+        .file-action-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 4px;
+            background: var(--bg-tertiary);
+            border-radius: 2px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 2px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .options-section {
+            animation: fadeInUp 0.6s ease-out 0.2s backwards;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        .option-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .option-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--fg-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .option-label .badge {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            background: rgba(6, 182, 212, 0.15);
+            color: var(--accent-primary);
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .slider-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .slider-value-display {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--accent-primary);
+            background: rgba(6, 182, 212, 0.1);
+            padding: 4px 12px;
+            border-radius: var(--radius-sm);
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .slider-container {
+            position: relative;
+            padding: 8px 0;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 10px var(--accent-glow);
+            transition: transform 0.2s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 10px var(--accent-glow);
+        }
+
+        .format-select {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .format-option {
+            flex: 1;
+            min-width: 80px;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--fg-secondary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .format-option:hover {
+            border-color: var(--accent-primary);
+            color: var(--fg-primary);
+        }
+
+        .format-option.active {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-color: transparent;
+            color: var(--bg-primary);
+            box-shadow: 0 4px 15px var(--accent-glow);
+        }
+
+        .dimension-inputs {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .dimension-input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        .dimension-input-wrapper input {
+            width: 100%;
+            padding: 12px 40px 12px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--fg-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .dimension-input-wrapper input:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .dimension-input-wrapper .unit {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--fg-muted);
+            font-size: 0.8rem;
+        }
+
+        .dimension-separator {
+            color: var(--fg-muted);
+            font-weight: 500;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .checkbox-group:hover {
+            background: rgba(6, 182, 212, 0.08);
+        }
+
+        .custom-checkbox {
+            width: 22px;
+            height: 22px;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .checkbox-group.checked .custom-checkbox {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-color: var(--accent-primary);
+        }
+
+        .custom-checkbox svg {
+            width: 14px;
+            height: 14px;
+            stroke: var(--bg-primary);
+            stroke-width: 3;
+            opacity: 0;
+            transform: scale(0.5);
+            transition: all 0.2s ease;
+        }
+
+        .checkbox-group.checked .custom-checkbox svg {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .checkbox-label {
+            font-size: 0.9rem;
+            color: var(--fg-secondary);
+        }
+
+        .actions-section {
+            margin-top: 32px;
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            animation: fadeInUp 0.6s ease-out 0.3s backwards;
+        }
+
+        .btn {
+            padding: 16px 32px;
+            border-radius: var(--radius-md);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            border: none;
+            outline: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: var(--bg-primary);
+            box-shadow: 0 4px 20px var(--accent-glow);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px var(--accent-glow);
+        }
+
+        .btn-primary:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--fg-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: rgba(6, 182, 212, 0.1);
+            border-color: var(--accent-primary);
+        }
+
+        .btn-secondary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--error);
+            border: 1px solid var(--error);
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: var(--error);
+            color: white;
+        }
+
+        .btn svg {
+            width: 20px;
+            height: 20px;
+            stroke-width: 2;
+        }
+
+        .btn-loading .btn-text {
+            opacity: 0;
+        }
+
+        .spinner {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border: 3px solid transparent;
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        .btn-loading .spinner {
+            display: block;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .batch-progress {
+            margin-top: 24px;
+            display: none;
+        }
+
+        .batch-progress.show {
+            display: block;
+            animation: fadeInUp 0.3s ease-out;
+        }
+
+        .batch-progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .batch-progress-text {
+            font-size: 0.95rem;
+            color: var(--fg-secondary);
+        }
+
+        .batch-progress-count {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            color: var(--accent-primary);
+        }
+
+        .batch-progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .batch-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .preview-container {
+            min-height: 300px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: repeating-conic-gradient(
+                rgba(148, 163, 184, 0.03) 0% 25%,
+                transparent 0% 50%
+            ) 50% / 20px 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .preview-placeholder {
+            color: var(--fg-muted);
+            text-align: center;
+        }
+
+        .preview-placeholder svg {
+            width: 48px;
+            height: 48px;
+            stroke: var(--fg-muted);
+            stroke-width: 1.5;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        #svgPreview {
+            max-width: 100%;
+            max-height: 400px;
+            display: none;
+        }
+
+        #svgPreview.show {
+            display: block;
+            animation: zoomIn 0.4s ease-out;
+        }
+
+        @keyframes zoomIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .result-section {
+            margin-top: 32px;
+            display: none;
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        .result-section.show {
+            display: block;
+        }
+
+        .result-card {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(6, 182, 212, 0.1));
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .result-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--success), var(--accent-primary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .result-icon svg {
+            width: 28px;
+            height: 28px;
+            stroke: white;
+            stroke-width: 2.5;
+        }
+
+        .result-info {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .result-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--success);
+            margin-bottom: 4px;
+        }
+
+        .result-details {
+            font-size: 0.875rem;
+            color: var(--fg-secondary);
+        }
+
+        .btn-download {
+            background: linear-gradient(135deg, var(--success), #059669);
+            color: white;
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(16, 185, 129, 0.4);
+        }
+
+        .error-section {
+            margin-top: 24px;
+            display: none;
+            animation: shake 0.5s ease-out;
+        }
+
+        .error-section.show {
+            display: block;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        .error-card {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: var(--radius-md);
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .error-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--error);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .error-icon svg {
+            width: 20px;
+            height: 20px;
+            stroke: white;
+            stroke-width: 2.5;
+        }
+
+        .error-message {
+            color: var(--error);
+            font-size: 0.95rem;
+        }
+
+        .progress-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(10, 15, 26, 0.9);
+            backdrop-filter: blur(10px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .progress-overlay.show {
+            display: flex;
+        }
+
+        .progress-content {
+            text-align: center;
+            animation: zoomIn 0.3s ease-out;
+        }
+
+        .progress-spinner {
+            width: 80px;
+            height: 80px;
+            border: 4px solid var(--border-color);
+            border-top-color: var(--accent-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 24px;
+        }
+
+        .progress-text {
+            font-size: 1.25rem;
+            font-weight: 500;
+            color: var(--fg-primary);
+        }
+
+        .progress-subtext {
+            font-size: 0.9rem;
+            color: var(--fg-muted);
+            margin-top: 8px;
+        }
+
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .stat-item {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--fg-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 48px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border-color);
+            color: var(--fg-muted);
+            font-size: 0.875rem;
+            animation: fadeInUp 0.6s ease-out 0.5s backwards;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 24px 16px;
+            }
+
+            .card {
+                padding: 24px;
+            }
+
+            .upload-zone {
+                padding: 32px 16px;
+            }
+
+            .options-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .dimension-inputs {
+                flex-direction: column;
+            }
+
+            .dimension-separator {
+                display: none;
+            }
+
+            .actions-section {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .result-card {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .tab-btn {
+                width: 100%;
+            }
+
+            .file-item {
+                flex-wrap: wrap;
+            }
+
+            .file-actions {
+                width: 100%;
+                justify-content: flex-end;
+                margin-top: 8px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="noise-overlay"></div>
+    
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke-linecap="round" stroke-linejoin="round"/>
+                        <polyline points="17 8 12 3 7 8" stroke-linecap="round" stroke-linejoin="round"/>
+                        <line x1="12" y1="3" x2="12" y2="15" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+            </div>
+            <h1>Image Converter Pro</h1>
+            <p class="subtitle">批量转换 · 多格式支持 · 高质量输出</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="batch">批量转换</button>
+            <button class="tab-btn" data-tab="single">单文件转换</button>
+        </div>
+
+        <div id="batchTab" class="tab-content active">
+            <div class="card">
+                <h2 class="card-title">上传文件</h2>
+                
+                <div class="upload-zone" id="batchUploadZone">
+                    <div class="upload-icon">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke-linecap="round" stroke-linejoin="round"/>
+                            <polyline points="17 8 12 3 7 8" stroke-linecap="round" stroke-linejoin="round"/>
+                            <line x1="12" y1="3" x2="12" y2="15" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <p class="upload-text">拖放图片文件到这里</p>
+                    <p class="upload-hint">支持 JPG, PNG, WebP, SVG · 可多选</p>
+                    <input type="file" id="batchFileInput" accept="image/*,.svg" multiple>
+                </div>
+
+                <div class="file-list" id="fileList"></div>
+
+                <div class="batch-progress" id="batchProgress">
+                    <div class="batch-progress-header">
+                        <span class="batch-progress-text">转换进度</span>
+                        <span class="batch-progress-count" id="progressCount">0 / 0</span>
+                    </div>
+                    <div class="batch-progress-bar">
+                        <div class="batch-progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+
+                <div class="stats-bar" id="statsBar" style="display: none;">
+                    <div class="stat-item">
+                        <div class="stat-value" id="totalFiles">0</div>
+                        <div class="stat-label">总文件数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="successCount">0</div>
+                        <div class="stat-label">成功</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="errorCount">0</div>
+                        <div class="stat-label">失败</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="totalSize">0 KB</div>
+                        <div class="stat-label">总大小</div>
+                    </div>
+                </div>
+            </div>
+
+            <section class="options-section">
+                <div class="card">
+                    <h2 class="card-title">转换选项</h2>
+                    <div class="options-grid">
+                        <div class="option-group">
+                            <div class="slider-wrapper">
+                                <div class="slider-header">
+                                    <span class="option-label">输出质量</span>
+                                    <span class="slider-value-display" id="batchQualityValue">100%</span>
+                                </div>
+                                <div class="slider-container">
+                                    <input type="range" id="batchQualitySlider" min="1" max="100" value="100">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="option-group">
+                            <span class="option-label">输出格式</span>
+                            <div class="format-select" id="batchFormatSelect">
+                                <button class="format-option active" data-format="png">PNG</button>
+                                <button class="format-option" data-format="jpeg">JPG</button>
+                                <button class="format-option" data-format="webp">WebP</button>
+                            </div>
+                        </div>
+
+                        <div class="option-group">
+                            <span class="option-label">输出尺寸 (px)</span>
+                            <div class="dimension-inputs">
+                                <div class="dimension-input-wrapper">
+                                    <input type="number" id="batchWidthInput" placeholder="宽度" min="1" max="10000">
+                                    <span class="unit">W</span>
+                                </div>
+                                <span class="dimension-separator">×</span>
+                                <div class="dimension-input-wrapper">
+                                    <input type="number" id="batchHeightInput" placeholder="高度" min="1" max="10000">
+                                    <span class="unit">H</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="option-group">
+                            <span class="option-label">比例设置</span>
+                            <div class="checkbox-group checked" id="batchAspectRatioToggle">
+                                <div class="custom-checkbox">
+                                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <polyline points="20 6 9 17 4 12"/>
+                                    </svg>
+                                </div>
+                                <span class="checkbox-label">保持原始比例</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="actions-section">
+                <button class="btn btn-primary" id="batchConvertBtn" disabled>
+                    <span class="spinner"></span>
+                    <span class="btn-text">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" stroke="currentColor" stroke-linecap="round"/>
+                        </svg>
+                        开始批量转换
+                    </span>
+                </button>
+                <button class="btn btn-secondary" id="batchDownloadAllBtn" disabled>
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
+                        <polyline points="7 10 12 15 17 10" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
+                        <line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    下载全部
+                </button>
+                <button class="btn btn-danger" id="batchCancelBtn" disabled>
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="15" y1="9" x2="9" y2="15"/>
+                        <line x1="9" y1="9" x2="15" y2="15"/>
+                    </svg>
+                    取消转换
+                </button>
+                <button class="btn btn-secondary" id="batchResetBtn">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M3 3v5h5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    清空列表
+                </button>
+            </section>
+        </div>
+
+        <div id="singleTab" class="tab-content">
+            <div class="main-content" style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px;">
+                <div class="card">
+                    <h2 class="card-title">上传文件</h2>
+                    
+                    <div class="upload-zone" id="uploadZone">
+                        <div class="upload-icon">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke-linecap="round" stroke-linejoin="round"/>
+                                <polyline points="17 8 12 3 7 8" stroke-linecap="round" stroke-linejoin="round"/>
+                                <line x1="12" y1="3" x2="12" y2="15" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <p class="upload-text">拖放SVG文件到这里</p>
+                        <p class="upload-hint">或 <span>点击选择文件</span></p>
+                        <input type="file" id="fileInput" accept=".svg,image/svg+xml">
+                    </div>
+
+                    <div class="file-info" id="fileInfo" style="margin-top: 20px; padding: 16px; background: rgba(6, 182, 212, 0.08); border-radius: var(--radius-md); display: none;">
+                        <div class="file-name" id="fileName" style="font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--accent-primary); word-break: break-all;"></div>
+                        <div class="file-size" id="fileSize" style="font-size: 0.8rem; color: var(--fg-muted); margin-top: 4px;"></div>
+                    </div>
+
+                    <div class="error-section" id="errorSection">
+                        <div class="error-card">
+                            <div class="error-icon">
+                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="15" y1="9" x2="9" y2="15"/>
+                                    <line x1="9" y1="9" x2="15" y2="15"/>
+                                </svg>
+                            </div>
+                            <span class="error-message" id="errorMessage"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2 class="card-title">预览</h2>
+                    <div class="preview-container" id="previewContainer">
+                        <div class="preview-placeholder" id="previewPlaceholder">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                <circle cx="8.5" cy="8.5" r="1.5"/>
+                                <polyline points="21 15 16 10 5 21"/>
+                            </svg>
+                            <p>上传SVG文件后预览</p>
+                        </div>
+                        <img id="svgPreview" alt="SVG Preview">
+                    </div>
+                </div>
+            </div>
+
+            <section class="options-section">
+                <div class="card">
+                    <h2 class="card-title">转换选项</h2>
+                    <div class="options-grid">
+                        <div class="option-group">
+                            <div class="slider-wrapper">
+                                <div class="slider-header">
+                                    <span class="option-label">PNG质量</span>
+                                    <span class="slider-value-display" id="qualityValue">100%</span>
+                                </div>
+                                <div class="slider-container">
+                                    <input type="range" id="qualitySlider" min="1" max="100" value="100">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="option-group">
+                            <span class="option-label">输出尺寸 (px)</span>
+                            <div class="dimension-inputs">
+                                <div class="dimension-input-wrapper">
+                                    <input type="number" id="widthInput" placeholder="宽度" min="1" max="10000">
+                                    <span class="unit">W</span>
+                                </div>
+                                <span class="dimension-separator">×</span>
+                                <div class="dimension-input-wrapper">
+                                    <input type="number" id="heightInput" placeholder="高度" min="1" max="10000">
+                                    <span class="unit">H</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="option-group">
+                            <span class="option-label">比例设置</span>
+                            <div class="checkbox-group checked" id="aspectRatioToggle">
+                                <div class="custom-checkbox">
+                                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <polyline points="20 6 9 17 4 12"/>
+                                    </svg>
+                                </div>
+                                <span class="checkbox-label">保持原始比例</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="actions-section">
+                <button class="btn btn-primary" id="convertBtn" disabled>
+                    <span class="spinner"></span>
+                    <span class="btn-text">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" stroke="currentColor" stroke-linecap="round"/>
+                        </svg>
+                        开始转换
+                    </span>
+                </button>
+                <button class="btn btn-secondary" id="resetBtn">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M3 3v5h5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    重置
+                </button>
+            </section>
+
+            <section class="result-section" id="resultSection">
+                <div class="result-card">
+                    <div class="result-icon">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="result-info">
+                        <div class="result-title">转换成功</div>
+                        <div class="result-details" id="resultDetails"></div>
+                    </div>
+                    <button class="btn btn-download" id="downloadBtn">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
+                            <polyline points="7 10 12 15 17 10" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
+                            <line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        下载PNG
+                    </button>
+                </div>
+            </section>
+        </div>
+
+        <footer>
+            <p>支持 JPG, PNG, WebP, SVG 格式互转 · 使用 Canvas API 实现高质量转换</p>
+        </footer>
+    </div>
+
+    <div class="progress-overlay" id="progressOverlay">
+        <div class="progress-content">
+            <div class="progress-spinner"></div>
+            <p class="progress-text">正在转换...</p>
+            <p class="progress-subtext">请稍候，处理中</p>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const formatFileSize = (bytes) => {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            };
+
+            const showError = (message) => {
+                const errorSection = document.getElementById('errorSection');
+                const errorMessage = document.getElementById('errorMessage');
+                errorMessage.textContent = message;
+                errorSection.classList.add('show');
+                setTimeout(() => {
+                    errorSection.classList.remove('show');
+                }, 5000);
+            };
+
+            const hideError = () => {
+                document.getElementById('errorSection').classList.remove('show');
+            };
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    btn.classList.add('active');
+                    document.getElementById(btn.dataset.tab + 'Tab').classList.add('active');
+                });
+            });
+
+            const batchFiles = [];
+            let isConverting = false;
+            let cancelRequested = false;
+
+            const batchUploadZone = document.getElementById('batchUploadZone');
+            const batchFileInput = document.getElementById('batchFileInput');
+            const fileList = document.getElementById('fileList');
+            const batchConvertBtn = document.getElementById('batchConvertBtn');
+            const batchDownloadAllBtn = document.getElementById('batchDownloadAllBtn');
+            const batchCancelBtn = document.getElementById('batchCancelBtn');
+            const batchResetBtn = document.getElementById('batchResetBtn');
+            const batchQualitySlider = document.getElementById('batchQualitySlider');
+            const batchQualityValue = document.getElementById('batchQualityValue');
+            const batchWidthInput = document.getElementById('batchWidthInput');
+            const batchHeightInput = document.getElementById('batchHeightInput');
+            const batchAspectRatioToggle = document.getElementById('batchAspectRatioToggle');
+            const batchProgress = document.getElementById('batchProgress');
+            const progressCount = document.getElementById('progressCount');
+            const progressFill = document.getElementById('progressFill');
+            const statsBar = document.getElementById('statsBar');
+            const totalFilesEl = document.getElementById('totalFiles');
+            const successCountEl = document.getElementById('successCount');
+            const errorCountEl = document.getElementById('errorCount');
+            const totalSizeEl = document.getElementById('totalSize');
+
+            let batchKeepAspectRatio = true;
+            let batchOutputFormat = 'png';
+
+            batchUploadZone.addEventListener('click', () => batchFileInput.click());
+
+            batchUploadZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                batchUploadZone.classList.add('dragover');
+            });
+
+            batchUploadZone.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                batchUploadZone.classList.remove('dragover');
+            });
+
+            batchUploadZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                batchUploadZone.classList.remove('dragover');
+                handleBatchFiles(e.dataTransfer.files);
+            });
+
+            batchFileInput.addEventListener('change', (e) => {
+                handleBatchFiles(e.target.files);
+            });
+
+            function handleBatchFiles(files) {
+                const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml', 'image/svg'];
+                
+                Array.from(files).forEach(file => {
+                    const ext = file.name.toLowerCase().split('.').pop();
+                    const validExts = ['jpg', 'jpeg', 'png', 'webp', 'svg'];
+                    
+                    if (validTypes.includes(file.type) || validExts.includes(ext)) {
+                        const id = Date.now() + Math.random().toString(36).substr(2, 9);
+                        batchFiles.push({
+                            id,
+                            file,
+                            name: file.name,
+                            size: file.size,
+                            status: 'pending',
+                            progress: 0,
+                            result: null,
+                            preview: null
+                        });
+                    }
+                });
+
+                renderFileList();
+                updateStats();
+            }
+
+            function renderFileList() {
+                fileList.innerHTML = '';
+                
+                batchFiles.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = `file-item ${item.status}`;
+                    div.id = `file-${item.id}`;
+                    
+                    div.innerHTML = `
+                        <div class="file-thumb" id="thumb-${item.id}">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                <circle cx="8.5" cy="8.5" r="1.5"/>
+                                <polyline points="21 15 16 10 5 21"/>
+                            </svg>
+                        </div>
+                        <div class="file-info">
+                            <div class="file-name">${item.name}</div>
+                            <div class="file-meta">
+                                <span>${formatFileSize(item.size)}</span>
+                                <span>${item.result ? formatFileSize(item.result.size) : ''}</span>
+                            </div>
+                            ${item.status === 'converting' ? `
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar" style="width: ${item.progress}%"></div>
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div class="file-status ${item.status}">
+                            ${getStatusIcon(item.status)}
+                            ${getStatusText(item.status)}
+                        </div>
+                        <div class="file-actions">
+                            ${item.result ? `
+                                <button class="file-action-btn" onclick="downloadFile('${item.id}')" title="下载">
+                                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <polyline points="7 10 12 15 17 10" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </button>
+                            ` : ''}
+                            <button class="file-action-btn delete" onclick="removeFile('${item.id}')" title="删除">
+                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <polyline points="3 6 5 6 21 6"/>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                </svg>
+                            </button>
+                        </div>
+                    `;
+                    
+                    fileList.appendChild(div);
+                    
+                    if (!item.preview) {
+                        loadPreview(item);
+                    }
+                });
+
+                batchConvertBtn.disabled = batchFiles.length === 0 || isConverting;
+            }
+
+            function getStatusIcon(status) {
+                switch(status) {
+                    case 'pending':
+                        return '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10"/></svg>';
+                    case 'converting':
+                        return '<svg viewBox="0 0 24 24" fill="none" style="animation: spin 1s linear infinite;"><circle cx="12" cy="12" r="10" stroke-dasharray="60" stroke-dashoffset="20"/></svg>';
+                    case 'success':
+                        return '<svg viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5"/></svg>';
+                    case 'error':
+                        return '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+                    default:
+                        return '';
+                }
+            }
+
+            function getStatusText(status) {
+                switch(status) {
+                    case 'pending': return '等待中';
+                    case 'converting': return '转换中';
+                    case 'success': return '成功';
+                    case 'error': return '失败';
+                    default: return '';
+                }
+            }
+
+            async function loadPreview(item) {
+                const thumb = document.getElementById(`thumb-${item.id}`);
+                if (!thumb) return;
+
+                try {
+                    if (item.file.type === 'image/svg+xml' || item.file.name.toLowerCase().endsWith('.svg')) {
+                        const text = await item.file.text();
+                        const blob = new Blob([text], { type: 'image/svg+xml' });
+                        const url = URL.createObjectURL(blob);
+                        thumb.innerHTML = `<img src="${url}" alt="preview">`;
+                    } else {
+                        const url = URL.createObjectURL(item.file);
+                        thumb.innerHTML = `<img src="${url}" alt="preview">`;
+                    }
+                } catch (e) {
+                    console.error('Preview error:', e);
+                }
+            }
+
+            window.removeFile = function(id) {
+                const index = batchFiles.findIndex(f => f.id === id);
+                if (index > -1) {
+                    batchFiles.splice(index, 1);
+                    renderFileList();
+                    updateStats();
+                }
+            };
+
+            window.downloadFile = function(id) {
+                const item = batchFiles.find(f => f.id === id);
+                if (item && item.result) {
+                    const url = URL.createObjectURL(item.result.blob);
+                    const a = document.createElement('a');
+                    const baseName = item.name.replace(/\.[^.]+$/, '');
+                    const ext = batchOutputFormat === 'jpeg' ? 'jpg' : batchOutputFormat;
+                    a.href = url;
+                    a.download = `${baseName}.${ext}`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }
+            };
+
+            function updateStats() {
+                const total = batchFiles.length;
+                const success = batchFiles.filter(f => f.status === 'success').length;
+                const error = batchFiles.filter(f => f.status === 'error').length;
+                const totalSize = batchFiles.reduce((sum, f) => sum + f.size, 0);
+
+                if (total > 0) {
+                    statsBar.style.display = 'grid';
+                    totalFilesEl.textContent = total;
+                    successCountEl.textContent = success;
+                    errorCountEl.textContent = error;
+                    totalSizeEl.textContent = formatFileSize(totalSize);
+                } else {
+                    statsBar.style.display = 'none';
+                }
+
+                batchConvertBtn.disabled = total === 0 || isConverting;
+                batchDownloadAllBtn.disabled = success === 0;
+            }
+
+            batchQualitySlider.addEventListener('input', (e) => {
+                batchQualityValue.textContent = e.target.value + '%';
+            });
+
+            batchWidthInput.addEventListener('input', () => {
+                if (batchKeepAspectRatio && batchWidthInput.value) {
+                    batchHeightInput.value = '';
+                }
+            });
+
+            batchHeightInput.addEventListener('input', () => {
+                if (batchKeepAspectRatio && batchHeightInput.value) {
+                    batchWidthInput.value = '';
+                }
+            });
+
+            batchAspectRatioToggle.addEventListener('click', () => {
+                batchKeepAspectRatio = !batchKeepAspectRatio;
+                batchAspectRatioToggle.classList.toggle('checked', batchKeepAspectRatio);
+            });
+
+            document.querySelectorAll('#batchFormatSelect .format-option').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('#batchFormatSelect .format-option').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    batchOutputFormat = btn.dataset.format;
+                });
+            });
+
+            batchConvertBtn.addEventListener('click', startBatchConversion);
+            batchCancelBtn.addEventListener('click', () => { cancelRequested = true; });
+            batchResetBtn.addEventListener('click', resetBatch);
+
+            async function startBatchConversion() {
+                if (isConverting || batchFiles.length === 0) return;
+
+                isConverting = true;
+                cancelRequested = false;
+                
+                batchConvertBtn.disabled = true;
+                batchCancelBtn.disabled = false;
+                batchProgress.classList.add('show');
+
+                const quality = parseInt(batchQualitySlider.value) / 100;
+                const targetWidth = parseInt(batchWidthInput.value) || null;
+                const targetHeight = parseInt(batchHeightInput.value) || null;
+
+                let completed = 0;
+                const total = batchFiles.length;
+
+                for (const item of batchFiles) {
+                    if (cancelRequested) break;
+
+                    item.status = 'converting';
+                    item.progress = 0;
+                    renderFileList();
+
+                    try {
+                        const result = await convertImage(item.file, batchOutputFormat, quality, targetWidth, targetHeight, (progress) => {
+                            item.progress = progress;
+                            const progressBar = document.querySelector(`#file-${item.id} .progress-bar`);
+                            if (progressBar) {
+                                progressBar.style.width = progress + '%';
+                            }
+                        });
+
+                        item.result = result;
+                        item.status = 'success';
+                    } catch (err) {
+                        console.error('Conversion error:', err);
+                        item.status = 'error';
+                    }
+
+                    completed++;
+                    progressCount.textContent = `${completed} / ${total}`;
+                    progressFill.style.width = (completed / total * 100) + '%';
+                    renderFileList();
+                    updateStats();
+                }
+
+                isConverting = false;
+                batchConvertBtn.disabled = batchFiles.length === 0;
+                batchCancelBtn.disabled = true;
+            }
+
+            async function convertImage(file, format, quality, targetWidth, targetHeight, onProgress) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    
+                    reader.onload = async (e) => {
+                        try {
+                            onProgress(20);
+                            
+                            const img = new Image();
+                            
+                            if (file.type === 'image/svg+xml' || file.name.toLowerCase().endsWith('.svg')) {
+                                const svgBlob = new Blob([e.target.result], { type: 'image/svg+xml;charset=utf-8' });
+                                img.src = URL.createObjectURL(svgBlob);
+                            } else {
+                                img.src = e.target.result;
+                            }
+
+                            await new Promise((res, rej) => {
+                                img.onload = res;
+                                img.onerror = () => rej(new Error('无法加载图像'));
+                            });
+
+                            onProgress(50);
+
+                            const canvas = document.createElement('canvas');
+                            let width = img.naturalWidth || img.width;
+                            let height = img.naturalHeight || img.height;
+
+                            if (targetWidth && targetHeight) {
+                                width = targetWidth;
+                                height = targetHeight;
+                            } else if (targetWidth) {
+                                const ratio = height / img.width;
+                                width = targetWidth;
+                                height = Math.round(targetWidth * ratio);
+                            } else if (targetHeight) {
+                                const ratio = width / height;
+                                height = targetHeight;
+                                width = Math.round(targetHeight * ratio);
+                            }
+
+                            canvas.width = width;
+                            canvas.height = height;
+
+                            const ctx = canvas.getContext('2d');
+                            
+                            if (format === 'jpeg') {
+                                ctx.fillStyle = '#ffffff';
+                                ctx.fillRect(0, 0, width, height);
+                            } else {
+                                ctx.clearRect(0, 0, width, height);
+                            }
+
+                            ctx.drawImage(img, 0, 0, width, height);
+
+                            onProgress(80);
+
+                            const mimeType = format === 'jpeg' ? 'image/jpeg' : format === 'webp' ? 'image/webp' : 'image/png';
+
+                            canvas.toBlob((blob) => {
+                                if (blob) {
+                                    resolve({ blob, size: blob.size, width, height });
+                                } else {
+                                    reject(new Error('转换失败'));
+                                }
+                            }, mimeType, quality);
+
+                            onProgress(100);
+
+                        } catch (err) {
+                            reject(err);
+                        }
+                    };
+
+                    reader.onerror = () => reject(new Error('文件读取失败'));
+                    
+                    if (file.type === 'image/svg+xml' || file.name.toLowerCase().endsWith('.svg')) {
+                        reader.readAsText(file);
+                    } else {
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+
+            function resetBatch() {
+                batchFiles.length = 0;
+                fileList.innerHTML = '';
+                batchProgress.classList.remove('show');
+                progressFill.style.width = '0%';
+                progressCount.textContent = '0 / 0';
+                statsBar.style.display = 'none';
+                batchFileInput.value = '';
+                batchConvertBtn.disabled = true;
+                batchDownloadAllBtn.disabled = true;
+            }
+
+            batchDownloadAllBtn.addEventListener('click', () => {
+                batchFiles.filter(f => f.status === 'success').forEach(item => {
+                    downloadFile(item.id);
+                });
+            });
+
+            const uploadZone = document.getElementById('uploadZone');
+            const fileInput = document.getElementById('fileInput');
+            const fileInfo = document.getElementById('fileInfo');
+            const fileName = document.getElementById('fileName');
+            const fileSize = document.getElementById('fileSize');
+            const svgPreview = document.getElementById('svgPreview');
+            const qualitySlider = document.getElementById('qualitySlider');
+            const qualityValue = document.getElementById('qualityValue');
+            const widthInput = document.getElementById('widthInput');
+            const heightInput = document.getElementById('heightInput');
+            const aspectRatioToggle = document.getElementById('aspectRatioToggle');
+            const convertBtn = document.getElementById('convertBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const resultSection = document.getElementById('resultSection');
+            const resultDetails = document.getElementById('resultDetails');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const progressOverlay = document.getElementById('progressOverlay');
+            const previewPlaceholder = document.getElementById('previewPlaceholder');
+
+            let currentSvgFile = null;
+            let originalWidth = 0;
+            let originalHeight = 0;
+            let pngBlob = null;
+            let keepAspectRatio = true;
+
+            function validateSvgFile(file) {
+                if (!file) {
+                    return { valid: false, error: '请选择一个文件' };
+                }
+                
+                const validTypes = ['image/svg+xml', 'image/svg'];
+                const validExtensions = ['.svg'];
+                const fileExtension = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
+                
+                if (!validTypes.includes(file.type) && !validExtensions.includes(fileExtension)) {
+                    return { valid: false, error: '请上传SVG格式的文件' };
+                }
+                
+                return { valid: true };
+            }
+
+            function parseSvgDimensions(svgText) {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(svgText, 'image/svg+xml');
+                const svg = doc.querySelector('svg');
+                
+                if (!svg) {
+                    throw new Error('无效的SVG文件');
+                }
+
+                let width = 0;
+                let height = 0;
+
+                const widthAttr = svg.getAttribute('width');
+                const heightAttr = svg.getAttribute('height');
+                const viewBox = svg.getAttribute('viewBox');
+
+                if (widthAttr && heightAttr) {
+                    width = parseFloat(widthAttr);
+                    height = parseFloat(heightAttr);
+                } else if (viewBox) {
+                    const parts = viewBox.split(/[\s,]+/).map(parseFloat);
+                    if (parts.length === 4) {
+                        width = parts[2];
+                        height = parts[3];
+                    }
+                }
+
+                if (width <= 0 || height <= 0) {
+                    width = 800;
+                    height = 600;
+                }
+
+                return { width, height, svg };
+            }
+
+            async function handleFile(file) {
+                hideError();
+                
+                const validation = validateSvgFile(file);
+                if (!validation.valid) {
+                    showError(validation.error);
+                    return;
+                }
+
+                try {
+                    const text = await file.text();
+                    const dimensions = parseSvgDimensions(text);
+                    
+                    currentSvgFile = {
+                        file,
+                        text,
+                        width: dimensions.width,
+                        height: dimensions.height,
+                        svg: dimensions.svg
+                    };
+
+                    originalWidth = dimensions.width;
+                    originalHeight = dimensions.height;
+
+                    fileName.textContent = file.name;
+                    fileSize.textContent = formatFileSize(file.size);
+                    fileInfo.classList.add('show');
+
+                    const blob = new Blob([text], { type: 'image/svg+xml' });
+                    const url = URL.createObjectURL(blob);
+                    svgPreview.src = url;
+                    svgPreview.classList.add('show');
+                    previewPlaceholder.style.display = 'none';
+
+                    widthInput.value = Math.round(originalWidth);
+                    heightInput.value = Math.round(originalHeight);
+
+                    convertBtn.disabled = false;
+                    resultSection.classList.remove('show');
+                    pngBlob = null;
+
+                } catch (err) {
+                    showError('无法解析SVG文件: ' + err.message);
+                    resetAll();
+                }
+            }
+
+            function resetAll() {
+                currentSvgFile = null;
+                originalWidth = 0;
+                originalHeight = 0;
+                pngBlob = null;
+                
+                fileInput.value = '';
+                fileInfo.classList.remove('show');
+                svgPreview.classList.remove('show');
+                svgPreview.src = '';
+                previewPlaceholder.style.display = 'flex';
+                
+                widthInput.value = '';
+                heightInput.value = '';
+                qualitySlider.value = 100;
+                qualityValue.textContent = '100%';
+                
+                convertBtn.disabled = true;
+                resultSection.classList.remove('show');
+                hideError();
+            }
+
+            function updateHeightFromWidth() {
+                if (!keepAspectRatio || !originalWidth || !originalHeight) return;
+                const width = parseFloat(widthInput.value);
+                if (width > 0) {
+                    const ratio = originalHeight / originalWidth;
+                    heightInput.value = Math.round(width * ratio);
+                }
+            }
+
+            function updateWidthFromHeight() {
+                if (!keepAspectRatio || !originalWidth || !originalHeight) return;
+                const height = parseFloat(heightInput.value);
+                if (height > 0) {
+                    const ratio = originalWidth / originalHeight;
+                    widthInput.value = Math.round(height * ratio);
+                }
+            }
+
+            async function convertToPng() {
+                if (!currentSvgFile) return;
+
+                const targetWidth = parseInt(widthInput.value) || originalWidth;
+                const targetHeight = parseInt(heightInput.value) || originalHeight;
+                const quality = parseInt(qualitySlider.value) / 100;
+
+                progressOverlay.classList.add('show');
+
+                try {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = targetWidth;
+                    canvas.height = targetHeight;
+                    const ctx = canvas.getContext('2d');
+
+                    ctx.fillStyle = 'transparent';
+                    ctx.clearRect(0, 0, targetWidth, targetHeight);
+
+                    const img = new Image();
+                    
+                    const svgBlob = new Blob([currentSvgFile.text], { type: 'image/svg+xml;charset=utf-8' });
+                    const url = URL.createObjectURL(svgBlob);
+
+                    await new Promise((resolve, reject) => {
+                        img.onload = resolve;
+                        img.onerror = () => reject(new Error('无法加载SVG图像'));
+                        img.src = url;
+                    });
+
+                    ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+                    URL.revokeObjectURL(url);
+
+                    pngBlob = await new Promise((resolve, reject) => {
+                        canvas.toBlob(
+                            (blob) => {
+                                if (blob) {
+                                    resolve(blob);
+                                } else {
+                                    reject(new Error('PNG生成失败'));
+                                }
+                            },
+                            'image/png',
+                            quality
+                        );
+                    });
+
+                    progressOverlay.classList.remove('show');
+
+                    resultDetails.textContent = `尺寸: ${targetWidth} × ${targetHeight}px · 大小: ${formatFileSize(pngBlob.size)}`;
+                    resultSection.classList.add('show');
+
+                } catch (err) {
+                    progressOverlay.classList.remove('show');
+                    showError('转换失败: ' + err.message);
+                }
+            }
+
+            function downloadPng() {
+                if (!pngBlob || !currentSvgFile) return;
+
+                const url = URL.createObjectURL(pngBlob);
+                const a = document.createElement('a');
+                const baseName = currentSvgFile.file.name.replace(/\.svg$/i, '');
+                a.href = url;
+                a.download = `${baseName}.png`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+
+            uploadZone.addEventListener('click', () => fileInput.click());
+
+            uploadZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadZone.classList.add('dragover');
+            });
+
+            uploadZone.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                uploadZone.classList.remove('dragover');
+            });
+
+            uploadZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadZone.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFile(files[0]);
+                }
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                const files = e.target.files;
+                if (files.length > 0) {
+                    handleFile(files[0]);
+                }
+            });
+
+            qualitySlider.addEventListener('input', (e) => {
+                qualityValue.textContent = e.target.value + '%';
+            });
+
+            widthInput.addEventListener('input', updateHeightFromWidth);
+            heightInput.addEventListener('input', updateWidthFromHeight);
+
+            aspectRatioToggle.addEventListener('click', () => {
+                keepAspectRatio = !keepAspectRatio;
+                aspectRatioToggle.classList.toggle('checked', keepAspectRatio);
+            });
+
+            convertBtn.addEventListener('click', convertToPng);
+            resetBtn.addEventListener('click', resetAll);
+            downloadBtn.addEventListener('click', downloadPng);
+
+            document.addEventListener('paste', (e) => {
+                const items = e.clipboardData.items;
+                for (let item of items) {
+                    if (item.type === 'text/plain') {
+                        item.getAsString((text) => {
+                            if (text.trim().startsWith('<svg') || text.trim().startsWith('<?xml')) {
+                                const file = new File([text], 'pasted.svg', { type: 'image/svg+xml' });
+                                handleFile(file);
+                            }
+                        });
+                        break;
+                    }
+                    if (item.type.indexOf('image') !== -1 || item.type.indexOf('svg') !== -1) {
+                        const file = item.getAsFile();
+                        if (file) {
+                            handleFile(file);
+                        }
+                        break;
+                    }
+                }
+            });
+        })();
+    </script>
+</body>
+</html>
